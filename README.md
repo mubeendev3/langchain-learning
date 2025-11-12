@@ -37,7 +37,8 @@ Langchain-Models/
 │   ├── chat-demo-openai.py   # OpenAI Chat Model
 │   ├── chat-demo-anthropic.py # Anthropic Chat Model
 │   ├── chat-gemini.py         # Google Gemini Chat Model
-│   └── chatmodel-huggingface.py # Hugging Face Chat Model
+│   ├── chatmodel-huggingface.py # Hugging Face Chat Model (API)
+│   └── chat-hf-localhosted.py # Hugging Face Chat Model (Local)
 ├── 3.EmbeddingModels/        # Embedding Model implementations (Coming Soon)
 ├── requirements.md            # Package dependencies
 ├── .env                       # Environment variables (API keys)
@@ -164,12 +165,19 @@ Chat Models are designed for conversational interactions with structured message
    - Provider: Anthropic Claude
    - Status: 🔄 To be implemented
 
-4. **Hugging Face Chat Model** (`2.ChatModels/chatmodel-huggingface.py`)
+4. **Hugging Face Chat Model (API)** (`2.ChatModels/chatmodel-huggingface.py`)
    - Model: `openai/gpt-oss-120b` (or other chat-completion compatible models)
    - Features: Chat completion via Hugging Face Inference API
    - Status: ✅ Working
    - Note: Requires `HUGGINGFACEHUB_API_TOKEN` in `.env`
    - Important: Not all models support chat completion - use models like `microsoft/Phi-3-mini-4k-instruct`
+
+5. **Hugging Face Chat Model (Local)** (`2.ChatModels/chat-hf-localhosted.py`)
+   - Model: `TinyLlama/TinyLlama-1.1B-Chat-v0.6`
+   - Features: Runs models locally using PyTorch
+   - Status: ✅ Working
+   - Requirements: PyTorch, transformers
+   - Note: First run downloads model (~2-4GB). Uses CPU by default.
 
 **Key Learnings:**
 
@@ -210,6 +218,11 @@ See `requirements.md` for the complete list of dependencies.
 - `langchain-anthropic` - Anthropic integration
 - `langchain-google-genai` - Google Gemini integration
 - `langchain-huggingface` - Hugging Face integration
+
+**For Local Model Hosting:**
+
+- `torch` - PyTorch (required for local Hugging Face models)
+- `transformers` - Hugging Face Transformers library
 
 ---
 
@@ -275,8 +288,11 @@ python .\2.ChatModels\chat-demo-openai.py
 # Google Gemini Chat Model
 python .\2.ChatModels\chat-gemini.py
 
-# Hugging Face Chat Model
+# Hugging Face Chat Model (API)
 python .\2.ChatModels\chatmodel-huggingface.py
+
+# Hugging Face Chat Model (Local - requires PyTorch)
+python .\2.ChatModels\chat-hf-localhosted.py
 ```
 
 ---
@@ -295,6 +311,7 @@ python .\2.ChatModels\chatmodel-huggingface.py
 
    - Hugging Face uses `HUGGINGFACEHUB_API_TOKEN` (not `ACCESS_TOKEN`)
    - Always verify environment variable names match library expectations
+   - Environment variables cannot contain hyphens: use `HF_HOME` not `HF-HOME`
 
 3. **Model Compatibility**
 
@@ -307,6 +324,154 @@ python .\2.ChatModels\chatmodel-huggingface.py
    - Use `python-dotenv` to load environment variables
    - Keep `.env` files out of version control
 
+5. **Local Model Hosting**
+   - Requires PyTorch for running models locally
+   - First run downloads model files (can be several GB)
+   - CPU-only PyTorch works but is slower than GPU
+   - Set `HF_HOME` environment variable to specify model cache directory
+
+---
+
+## 🐛 Issues Encountered & Solutions
+
+This section documents real issues we faced during development and how we resolved them.
+
+### Issue 1: Python 3.14 Compatibility Problem
+
+**Problem:**
+```
+ModuleNotFoundError: No module named 'langchain_core.pydantic_v1'
+```
+
+**Root Cause:**
+- Python 3.14 is too new for LangChain 1.0.4
+- Pydantic V1 (used by LangChain) doesn't support Python 3.14+
+- Error showed corrupted module names (e.g., `1angchain` instead of `langchain`)
+
+**Solution:**
+- Installed Python 3.12 alongside Python 3.14
+- Created virtual environment with Python 3.12: `py -3.12 -m venv venv`
+- Used `py` launcher to manage multiple Python versions
+
+**Lesson Learned:**
+- Always check Python version compatibility before starting a project
+- Use `py --list` to see available Python versions on Windows
+
+---
+
+### Issue 2: Missing Python Packages
+
+**Problem:**
+```
+ModuleNotFoundError: No module named 'dotenv'
+ModuleNotFoundError: No module named 'langchain_google_genai'
+```
+
+**Root Cause:**
+- Packages not installed in virtual environment
+- Virtual environment not activated
+- IDE using wrong Python interpreter
+
+**Solution:**
+- Installed missing packages: `pip install python-dotenv langchain-google-genai`
+- Verified virtual environment activation
+- Configured IDE to use venv's Python interpreter
+
+**Lesson Learned:**
+- Always activate virtual environment before installing packages
+- Verify IDE is using correct Python interpreter
+- Use `pip list` to check installed packages
+
+---
+
+### Issue 3: Hugging Face API Token Configuration
+
+**Problem:**
+```
+ValueError: You must provide an api_key to work with novita API
+```
+
+**Root Cause:**
+- `.env` file had `HUGGINGFACEHUB_ACCESS_TOKEN` instead of `HUGGINGFACEHUB_API_TOKEN`
+- Environment variable name mismatch
+
+**Solution:**
+- Updated `.env` file to use correct variable name: `HUGGINGFACEHUB_API_TOKEN`
+- Verified variable is loaded: `python -c "import os; from dotenv import load_dotenv; load_dotenv(); print(os.getenv('HUGGINGFACEHUB_API_TOKEN'))"`
+
+**Lesson Learned:**
+- Always check exact environment variable names in library documentation
+- Verify environment variables are loaded correctly
+
+---
+
+### Issue 4: Hugging Face Model Compatibility
+
+**Problem:**
+```
+StopIteration: No suitable provider found for chat completion
+```
+
+**Root Cause:**
+- Model `TinyLlama/TinyLlama-1.1B-Chat-v1.0` doesn't support chat completion via Inference API
+- Not all models support all tasks through the API
+
+**Solution:**
+- Switched to models that support chat completion: `microsoft/Phi-3-mini-4k-instruct`
+- For local hosting, used `HuggingFacePipeline` instead of API endpoint
+
+**Lesson Learned:**
+- Check model documentation for supported tasks
+- Some models work better locally than via API
+- Different models have different capabilities
+
+---
+
+### Issue 5: Missing PyTorch for Local Models
+
+**Problem:**
+```
+ImportError: AutoModelForCausalLM requires the PyTorch library but it was not found
+```
+
+**Root Cause:**
+- `HuggingFacePipeline.from_model_id()` requires PyTorch to load models locally
+- PyTorch was not installed in virtual environment
+
+**Solution:**
+- Installed PyTorch: `pip install torch`
+- Verified installation: `python -c "import torch; print(torch.__version__)"`
+- Fixed environment variable typo: `HF-HOME` → `HF_HOME`
+
+**Lesson Learned:**
+- Local model hosting requires additional dependencies (PyTorch/TensorFlow)
+- Environment variable names cannot contain hyphens
+- CPU-only PyTorch works but GPU is faster for larger models
+
+---
+
+### Issue 6: Git Security - Preventing API Key Commits
+
+**Problem:**
+- Accidentally ran `git add .` before creating `.gitignore`
+- Risk of committing `.env` file with API keys
+
+**Root Cause:**
+- No `.gitignore` file initially
+- Sensitive files not excluded from version control
+
+**Solution:**
+- Created comprehensive `.gitignore` file
+- Verified no sensitive files were tracked: `git check-ignore .env venv/`
+- Documented best practices for Git security
+
+**Lesson Learned:**
+- Always create `.gitignore` before first commit
+- Use `git status` to verify before committing
+- Never commit API keys or sensitive information
+
+---
+
 ### Common Issues & Solutions
 
 | Issue                                                | Solution                                            |
@@ -315,6 +480,9 @@ python .\2.ChatModels\chatmodel-huggingface.py
 | `ModuleNotFoundError: No module named 'langchain_*'` | Install provider package: `pip install langchain-*` |
 | Python 3.14 compatibility issues                     | Use Python 3.12 instead                             |
 | API key not found                                    | Check `.env` file and variable names                |
+| `ImportError: PyTorch not found`                     | Install: `pip install torch`                        |
+| `StopIteration` with Hugging Face models             | Use chat-completion compatible models               |
+| Environment variable not loading                     | Check variable name spelling and `.env` file location |
 
 ---
 
@@ -361,8 +529,13 @@ python .\2.ChatModels\chatmodel-huggingface.py
 
 ## 📅 Last Updated
 
-**Date:** 2025-01-XX  
-**Current Focus:** Chat Models  
+**Date:** January 2025  
+**Current Focus:** Chat Models (Local & API)  
+**Recent Additions:**
+- ✅ Hugging Face local model hosting with PyTorch
+- ✅ Comprehensive troubleshooting documentation
+- ✅ Multiple Python version management setup
+
 **Next Steps:** Embedding Models
 
 ---
