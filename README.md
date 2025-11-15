@@ -11,6 +11,7 @@ A comprehensive repository documenting my learning progress with LangChain, cove
   - [1. LLMs (Language Models)](#1-llms-language-models)
   - [2. Chat Models](#2-chat-models)
   - [3. Embedding Models](#3-embedding-models)
+  - [4. Prompts Component](#4-prompts-component)
 - [Requirements](#requirements)
 - [Environment Setup](#environment-setup)
 - [Usage Examples](#usage-examples)
@@ -31,15 +32,21 @@ This repository contains practical examples and implementations as I learn LangC
 
 ```
 Langchain-Models/
-├── 1.LLMs/                    # Basic Language Model implementations
-│   └── demo_openai.py         # OpenAI LLM demo
-├── 2.ChatModels/             # Chat Model implementations
-│   ├── chat-demo-openai.py   # OpenAI Chat Model
-│   ├── chat-demo-anthropic.py # Anthropic Chat Model
-│   ├── chat-gemini.py         # Google Gemini Chat Model
-│   ├── chatmodel-huggingface.py # Hugging Face Chat Model (API)
-│   └── chat-hf-localhosted.py # Hugging Face Chat Model (Local)
-├── 3.EmbeddingModels/        # Embedding Model implementations (Coming Soon)
+├── 1.Models Component/        # Model implementations
+│   ├── 1.LLMs/                # Basic Language Model implementations
+│   │   └── demo_openai.py    # OpenAI LLM demo
+│   ├── 2.ChatModels/          # Chat Model implementations
+│   │   ├── chat-gemini.py     # Google Gemini Chat Model
+│   │   ├── chat-hf-localhosted.py # Hugging Face Chat Model (Local)
+│   │   └── chatmodel-huggingface.py # Hugging Face Chat Model (API)
+│   └── 3.EmbeddingModels/     # Embedding Model implementations
+│       ├── embedding-openai-documents.py # OpenAI embeddings for documents
+│       ├── embedding-openai-query.py    # OpenAI embeddings for queries
+│       ├── embedding_hf_local_documents.py # Hugging Face local embeddings
+│       ├── embedding_hf_local.py         # Hugging Face local query embeddings
+│       └── document_similarity.py       # Document similarity using embeddings
+├── 2.Prompts Component/       # Prompt engineering and UI
+│   └── prompt_ui_streamlit.py # Streamlit UI for prompt templates
 ├── requirements.md            # Package dependencies
 ├── .env                       # Environment variables (API keys)
 └── README.md                  # This file
@@ -190,15 +197,65 @@ Chat Models are designed for conversational interactions with structured message
 
 ### 3. Embedding Models
 
-**Status:** 🔄 Planned
+**Status:** ✅ Completed
 
-Embedding models for converting text into vector representations.
+Embedding models for converting text into vector representations for semantic search and similarity matching.
 
-**Planned Topics:**
+#### Implementations:
 
-- Text embeddings
-- Vector similarity search
-- Semantic search applications
+1. **OpenAI Embeddings** 
+   - `embedding-openai-documents.py` - Embed multiple documents
+   - `embedding-openai-query.py` - Embed single query
+   - Model: `text-embedding-3-small`
+   - Features: Configurable dimensions (32, 300, etc.)
+   - Status: ✅ Working
+
+2. **Hugging Face Local Embeddings**
+   - `embedding_hf_local_documents.py` - Embed documents locally
+   - `embedding_hf_local.py` - Embed queries locally
+   - Model: `sentence-transformers/all-MiniLM-L6-v2`
+   - Features: Runs locally, no API required
+   - Status: ✅ Working
+
+3. **Document Similarity** (`document_similarity.py`)
+   - Uses OpenAI embeddings
+   - Calculates cosine similarity between query and documents
+   - Finds most similar document to a query
+   - Status: ✅ Working
+
+**Key Learnings:**
+- Embeddings convert text to numerical vectors
+- Cosine similarity measures semantic similarity
+- Different embedding models have different dimensions
+- Local embeddings don't require API keys
+- Embeddings enable semantic search and RAG applications
+
+---
+
+### 4. Prompts Component
+
+**Status:** ✅ Completed
+
+Interactive UI for prompt engineering using Streamlit and LangChain PromptTemplate.
+
+#### Implementations:
+
+1. **Streamlit Prompt UI** (`2.Prompts Component/prompt_ui_streamlit.py`)
+   - Interactive web interface for prompt templates
+   - Features:
+     - Research paper selection dropdown
+     - Explanation style selection (Beginner-Friendly, Technical, Code-Oriented, Mathematical)
+     - Explanation length selection (Short, Medium, Long)
+     - Dynamic prompt template with user inputs
+   - Model: `gpt-4o-mini`
+   - Status: ✅ Working
+
+**Key Learnings:**
+- PromptTemplate allows dynamic prompt creation with variables
+- Streamlit provides easy web UI for LangChain applications
+- Template variables can be filled from user inputs
+- Structured prompts improve AI response quality
+- UI makes prompt engineering accessible to non-technical users
 
 ---
 
@@ -223,6 +280,15 @@ See `requirements.md` for the complete list of dependencies.
 
 - `torch` - PyTorch (required for local Hugging Face models)
 - `transformers` - Hugging Face Transformers library
+
+**For Embeddings & Similarity:**
+
+- `scikit-learn` - For cosine similarity calculations
+- `numpy` - For numerical operations
+
+**For UI Components:**
+
+- `streamlit` - For building interactive web interfaces
 
 ---
 
@@ -292,7 +358,15 @@ python .\2.ChatModels\chat-gemini.py
 python .\2.ChatModels\chatmodel-huggingface.py
 
 # Hugging Face Chat Model (Local - requires PyTorch)
-python .\2.ChatModels\chat-hf-localhosted.py
+python .\1.Models Component\2.ChatModels\chat-hf-localhosted.py
+
+# Embedding Models
+python .\1.Models Component\3.EmbeddingModels\embedding-openai-documents.py
+python .\1.Models Component\3.EmbeddingModels\embedding-openai-query.py
+python .\1.Models Component\3.EmbeddingModels\document_similarity.py
+
+# Prompts Component (Streamlit UI)
+streamlit run .\2.Prompts Component\prompt_ui_streamlit.py
 ```
 
 ---
@@ -491,14 +565,16 @@ ImportError: AutoModelForCausalLM requires the PyTorch library but it was not fo
 ### Short-term Goals
 
 - [ ] Complete Anthropic Chat Model implementation
-- [ ] Add more examples with different parameters
+- [ ] Add more Streamlit UI examples
 - [ ] Implement error handling and retry logic
+- [ ] Add more embedding model examples
 
 ### Medium-term Goals
 
-- [ ] Start Embedding Models section
-- [ ] Add vector database integration
+- [x] Complete Embedding Models section ✅
+- [ ] Add vector database integration (Pinecone, Weaviate, Chroma)
 - [ ] Implement RAG (Retrieval Augmented Generation) examples
+- [ ] Build more interactive UIs with Streamlit
 
 ### Long-term Goals
 
@@ -530,13 +606,19 @@ ImportError: AutoModelForCausalLM requires the PyTorch library but it was not fo
 ## 📅 Last Updated
 
 **Date:** January 2025  
-**Current Focus:** Chat Models (Local & API)  
+**Current Focus:** Embedding Models & Prompts Component  
 **Recent Additions:**
+- ✅ Embedding Models section completed (OpenAI & Hugging Face)
+- ✅ Document similarity implementation with cosine similarity
+- ✅ Streamlit UI for prompt engineering
+- ✅ Project structure reorganization (Models Component, Prompts Component)
 - ✅ Hugging Face local model hosting with PyTorch
 - ✅ Comprehensive troubleshooting documentation
-- ✅ Multiple Python version management setup
 
-**Next Steps:** Embedding Models
+**Next Steps:** 
+- Vector databases integration
+- RAG (Retrieval Augmented Generation) implementation
+- Chains and Agents
 
 ---
 
