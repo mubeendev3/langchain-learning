@@ -76,7 +76,7 @@ Langchain-Models/
 1. **Clone the repository** (if applicable)
 
    ```bash
-   git clone <repository-url>
+   git clone 'https://github.com/mubeendev3/langchain-learning.git'
    cd Langchain-Models
    ```
 
