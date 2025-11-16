@@ -2,7 +2,7 @@
 from langchain_openai import ChatOpenAI
 from dotenv import load_dotenv
 import streamlit as st
-from langchain_core.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate, load_prompt
 
 # Load environment variables (like API keys) from .env file
 load_dotenv()
@@ -37,27 +37,8 @@ length_input = st.selectbox(
     ["Short (1-2 paragraphs)", "Medium (3-5 paragraphs)", "Long (detailed explanation)"]
 )
 
-# Create a prompt template with placeholders for user inputs
-template = PromptTemplate(
-    template=""" 
-    Please summarize the research paper titled "{paper_input}" with the following specifications:
-
-    Explanation Style: {style_input}
-    Explanation Length: {length_input}
-
-    Mathematical Details:
-    - Include relevant mathematical equations if present in the paper.
-    - Explain the mathematical concepts using simple, intuitive code snippets where applicable.
-
-    Analogies:
-    - Use relatable analogies to simplify complex ideas.
-
-    If certain information is not available in the paper, respond with: "Insufficient information available" instead of guessing.
-
-    Ensure the summary is clear, accurate, and aligned with the provided style and length.
-    """,
-    input_variables=["paper_input", "style_input", "length_input"]
-)
+# Load the prompt template from the file
+template = load_prompt("prompt_template.json")
 
 # Fill in the template with user's selected values
 prompt = template.invoke({
