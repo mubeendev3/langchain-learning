@@ -12,6 +12,7 @@ A comprehensive repository documenting my learning progress with LangChain, cove
   - [2. Chat Models](#2-chat-models)
   - [3. Embedding Models](#3-embedding-models)
   - [4. Prompts Component](#4-prompts-component)
+  - [5. Structured Output](#5-structured-output)
 - [Requirements](#requirements)
 - [Environment Setup](#environment-setup)
 - [Usage Examples](#usage-examples)
@@ -53,6 +54,12 @@ Langchain-Models/
 │   ├── prompt_generator.py    # Generate and save prompt templates
 │   ├── prompt_template.json  # Saved prompt template (JSON format)
 │   └── chat_history.txt       # Example chat history file
+├── 3.Structured Output/       # Structured output experiments
+│   ├── json_schema.json       # Shared JSON schema describing review outputs
+│   ├── pydantic_demo.py       # Mini refresher on BaseModel validation/model_dump
+│   ├── typedict_demo.py       # Quick TypedDict primer
+│   ├── with_structured_output_pydantic.py   # JSON schema-driven output parsing
+│   └── with_structured_output_typeddict.py  # TypedDict-based output parsing
 ├── Projects/                  # Complete project implementations
 │   └── 1.Chatbot/            # Chatbot project
 │       └── chatbot.py        # Interactive chatbot with chat history
@@ -338,6 +345,40 @@ Comprehensive prompt engineering examples covering templates, chat history, mess
 - Structured prompts improve AI response quality
 - Chat history management is crucial for conversational AI
 - Message-based architecture allows for better conversation flow control
+
+---
+
+### 5. Structured Output
+
+**Status:** ✅ In Progress
+
+Hands-on experiments with LangChain's `with_structured_output()` helper for forcing JSON-like responses into Python-friendly schemas.
+
+#### Implementations:
+
+1. **JSON Schema Output** (`3.Structured Output/with_structured_output_pydantic.py`)
+   - Reuses a standalone `json_schema.json` to request summaries, sentiments, and explicit pros/cons.
+   - Demonstrates how the chain returns plain dictionaries that can be indexed safely.
+   - Highlights schema-driven validation (enum sentiment, optional lists) before consuming responses.
+
+2. **TypedDict Output** (`3.Structured Output/with_structured_output_typeddict.py`)
+   - Uses Python `TypedDict` annotations plus `Annotated` descriptions to guide the model.
+   - Shows how to access structured keys like `summary`, `sentiment`, `key_themes`, `pros`, and `cons`.
+
+3. **Pydantic Primer** (`3.Structured Output/pydantic_demo.py`)
+   - Refresher on `BaseModel` validation, coercion (e.g., string → int), and `model_dump()`.
+   - Helps contrast dict-based vs. model-based outputs before wiring the schema back into LangChain.
+
+4. **TypedDict Primer** (`3.Structured Output/typedict_demo.py`)
+   - Simple example that documents the shape of a review/person dict before plugging it into a chain.
+
+**Key Learnings:**
+
+- `with_structured_output()` accepts either JSON schema dictionaries or Python typing objects.
+- JSON schema is great for interoperable specs, while `TypedDict` keeps everything Python-native.
+- Explicit descriptions/enum constraints drastically reduce hallucinated fields (e.g., only returning pros when supplied).
+- Validating with Pydantic ensures downstream consumers can rely on types when needed.
+- Structured outputs make it easier to build UI components or analytics dashboards on top of model responses.
 
 ---
 
