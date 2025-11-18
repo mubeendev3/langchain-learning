@@ -13,6 +13,7 @@ A comprehensive repository documenting my learning progress with LangChain, cove
   - [3. Embedding Models](#3-embedding-models)
   - [4. Prompts Component](#4-prompts-component)
   - [5. Structured Output](#5-structured-output)
+  - [6. Output Parsers](#6-output-parsers)
 - [Requirements](#requirements)
 - [Environment Setup](#environment-setup)
 - [Usage Examples](#usage-examples)
@@ -52,7 +53,7 @@ Langchain-Models/
 │   ├── message_placeholder.py # MessagesPlaceholder for chat history
 │   ├── messages.py            # SystemMessage, HumanMessage, AIMessage examples
 │   ├── prompt_generator.py    # Generate and save prompt templates
-│   ├── prompt_template.json  # Saved prompt template (JSON format)
+│   ├── prompt_template.json   # Saved prompt template (JSON format)
 │   └── chat_history.txt       # Example chat history file
 ├── 3.Structured Output/       # Structured output experiments
 │   ├── json_schema.json       # Shared JSON schema describing review outputs
@@ -60,6 +61,12 @@ Langchain-Models/
 │   ├── typedict_demo.py       # Quick TypedDict primer
 │   ├── with_structured_output_pydantic.py   # JSON schema-driven output parsing
 │   └── with_structured_output_typeddict.py  # TypedDict-based output parsing
+├── 4.Output Parsers/          # Output parsing implementations
+│   ├── json_output_parser.py  # JsonOutputParser for JSON responses
+│   ├── str_output_parser.py   # String output parsing examples
+│   ├── str_output_parser1.py  # Advanced string parser with chains
+│   ├── pydantic_output_parser.py # PydanticOutputParser with Pydantic models
+│   └── structured_output_parser.py # Structured output with Pydantic (migrated from deprecated StructuredOutputParser)
 ├── Projects/                  # Complete project implementations
 │   └── 1.Chatbot/            # Chatbot project
 │       └── chatbot.py        # Interactive chatbot with chat history
@@ -382,6 +389,52 @@ Hands-on experiments with LangChain's `with_structured_output()` helper for forc
 
 ---
 
+### 6. Output Parsers
+
+**Status:** ✅ Completed
+
+Output parsers convert raw LLM text responses into structured, usable Python objects. Different parsers serve different use cases depending on the desired output format and validation needs.
+
+#### Implementations:
+
+1. **String Output Parser** (`4.Output Parsers/str_output_parser.py`, `str_output_parser1.py`)
+   - `StrOutputParser` - Simplest parser, returns raw string output
+   - Use case: When you need plain text responses without structure
+   - Example: Multi-step chains where intermediate text is passed between prompts
+   - Status: ✅ Working
+
+2. **JSON Output Parser** (`4.Output Parsers/json_output_parser.py`)
+   - `JsonOutputParser` - Parses JSON responses into Python dictionaries
+   - Use case: When you need flexible JSON structure without strict validation
+   - Features: Automatically generates format instructions for the LLM
+   - Status: ✅ Working
+
+3. **Pydantic Output Parser** (`4.Output Parsers/pydantic_output_parser.py`)
+   - `PydanticOutputParser` - Parses responses into validated Pydantic models
+   - Use case: When you need type safety, validation, and structured data
+   - Features: Field validation, type coercion, automatic schema generation
+   - Example: Person model with name, age (≥18), and city fields
+   - Status: ✅ Working
+
+4. **Structured Output Parser** (`4.Output Parsers/structured_output_parser.py`)
+   - Migrated from deprecated `StructuredOutputParser` to `PydanticOutputParser`
+   - Use case: Defining structured schemas with field descriptions
+   - Originally used `ResponseSchema` objects (now deprecated)
+   - Modern approach: Use Pydantic models with `Field(description=...)`
+   - Status: ✅ Working (migrated to modern API)
+
+**Key Learnings:**
+
+- **When to use `StrOutputParser`**: Simple text responses, multi-step chains, when structure isn't needed
+- **When to use `JsonOutputParser`**: Flexible JSON responses, when you don't need strict validation
+- **When to use `PydanticOutputParser`**: Type safety, validation, structured schemas, when you need guaranteed data shape
+- **When to use `with_structured_output()`**: Native model support for structured output (better than parsers for supported models)
+- Output parsers work by adding format instructions to prompts, guiding the LLM to produce parseable output
+- Parsers can be chained: `template | model | parser` for clean, functional-style code
+- `get_format_instructions()` method generates instructions that tell the LLM how to format its response
+
+---
+
 ## 📦 Requirements
 
 See `requirements.md` for the complete list of dependencies.
@@ -497,6 +550,12 @@ python .\2.Prompts Component\message_placeholder.py
 python .\2.Prompts Component\messages.py
 python .\2.Prompts Component\prompt_generator.py
 
+# Output Parsers
+python .\4.Output Parsers\json_output_parser.py
+python .\4.Output Parsers\str_output_parser.py
+python .\4.Output Parsers\pydantic_output_parser.py
+python .\4.Output Parsers\structured_output_parser.py
+
 # Projects
 python .\Projects\1.Chatbot\chatbot.py
 ```
@@ -552,6 +611,14 @@ python .\Projects\1.Chatbot\chatbot.py
    - Use `AIMessage(content=result.content)` to store AI responses
    - Chat history can be loaded from files or maintained in memory
    - System messages should typically be at the start of the conversation
+
+8. **Output Parsers - When to Use What**
+   - **`StrOutputParser`**: Use for simple text responses or when passing text between chain steps. No structure needed.
+   - **`JsonOutputParser`**: Use when you need flexible JSON output without strict validation. Good for dynamic schemas.
+   - **`PydanticOutputParser`**: Use when you need type safety, validation, and guaranteed data structure. Best for production code.
+   - **`with_structured_output()`**: Use when your model supports native structured output (OpenAI, Anthropic). More efficient than parsers.
+   - **Why use structured output parsers?**: They ensure consistent, parseable output from LLMs. Without them, you'd need manual parsing and error handling.
+   - **ResponseSchema vs Pydantic**: `ResponseSchema` was a simpler API but is deprecated. Modern approach uses Pydantic models with `Field(description=...)` for better type safety and validation.
 
 ---
 
@@ -719,6 +786,69 @@ ImportError: AutoModelForCausalLM requires the PyTorch library but it was not fo
 
 ---
 
+### Issue 7: StructuredOutputParser Deprecation
+
+**Problem:**
+
+```python
+ImportError: Import "langchain.output_parsers" could not be resolved
+```
+
+**Root Cause:**
+
+- `StructuredOutputParser` and `ResponseSchema` were deprecated in modern LangChain
+- The `langchain.output_parsers` module no longer exists
+- These classes were moved/removed as part of LangChain's restructuring
+- Attempted to find in `langchain_community.output_parsers` but they don't exist there either
+
+**Solution:**
+
+Migrated from deprecated `StructuredOutputParser` to modern `PydanticOutputParser`:
+
+**Old Code (Deprecated):**
+```python
+from langchain.output_parsers import StructuredOutputParser, ResponseSchema
+
+schema = [
+    ResponseSchema(name="fact_1", description="The first fact about the topic"),
+    ResponseSchema(name="fact_2", description="The second fact about the topic"),
+    ResponseSchema(name="fact_3", description="The third fact about the topic")
+]
+
+parser = StructuredOutputParser.from_response_schemas(schema)
+```
+
+**New Code (Modern):**
+```python
+from langchain_core.output_parsers import PydanticOutputParser
+from pydantic import BaseModel, Field
+
+class Facts(BaseModel):
+    fact_1: str = Field(description="The first fact about the topic")
+    fact_2: str = Field(description="The second fact about the topic")
+    fact_3: str = Field(description="The third fact about the topic")
+
+parser = PydanticOutputParser(pydantic_object=Facts)
+```
+
+**Benefits of Migration:**
+
+- ✅ Type safety with Pydantic models
+- ✅ Automatic validation and type coercion
+- ✅ Better IDE support and autocomplete
+- ✅ Consistent with modern LangChain patterns
+- ✅ More maintainable and production-ready
+
+**Lesson Learned:**
+
+- Always check for deprecation warnings in LangChain
+- Modern LangChain favors Pydantic models over simple schema objects
+- `PydanticOutputParser` provides better validation and type safety than `StructuredOutputParser`
+- When encountering import errors, check if the API has been deprecated or moved
+- Use `langchain_core.output_parsers` for core parsers (not `langchain.output_parsers`)
+
+---
+
 ### Common Issues & Solutions
 
 | Issue                                                | Solution                                              |
@@ -730,6 +860,7 @@ ImportError: AutoModelForCausalLM requires the PyTorch library but it was not fo
 | `ImportError: PyTorch not found`                     | Install: `pip install torch`                          |
 | `StopIteration` with Hugging Face models             | Use chat-completion compatible models                 |
 | Environment variable not loading                     | Check variable name spelling and `.env` file location |
+| `ImportError: langchain.output_parsers` not found    | Use `PydanticOutputParser` from `langchain_core.output_parsers` instead |
 
 ---
 
@@ -784,6 +915,11 @@ ImportError: AutoModelForCausalLM requires the PyTorch library but it was not fo
 **Current Focus:** Prompts Component & Projects  
 **Recent Additions:**
 
+- ✅ Complete Output Parsers section:
+  - String, JSON, and Pydantic output parsers
+  - Migrated deprecated StructuredOutputParser to PydanticOutputParser
+  - Comprehensive learnings on when to use each parser type
+  - Chain-based parsing examples
 - ✅ Complete Prompts Component implementation:
   - Chat prompt templates with variables
   - MessagesPlaceholder for chat history
