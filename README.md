@@ -14,6 +14,7 @@ A comprehensive repository documenting my learning progress with LangChain, cove
   - [4. Prompts Component](#4-prompts-component)
   - [5. Structured Output](#5-structured-output)
   - [6. Output Parsers](#6-output-parsers)
+  - [7. Chains](#7-chains)
 - [Requirements](#requirements)
 - [Environment Setup](#environment-setup)
 - [Usage Examples](#usage-examples)
@@ -67,6 +68,11 @@ Langchain-Models/
 │   ├── str_output_parser1.py  # Advanced string parser with chains
 │   ├── pydantic_output_parser.py # PydanticOutputParser with Pydantic models
 │   └── structured_output_parser.py # Structured output with Pydantic (migrated from deprecated StructuredOutputParser)
+├── 5.Chains/                  # Chain implementations
+│   ├── simple_chain.py        # Basic chain with pipe operator
+│   ├── sequential_chain.py    # Sequential multi-step chain
+│   ├── parallel_chain.py       # Parallel execution with RunnableParallel
+│   └── conditional_chain.py   # Conditional branching with RunnableBranch
 ├── Projects/                  # Complete project implementations
 │   └── 1.Chatbot/            # Chatbot project
 │       └── chatbot.py        # Interactive chatbot with chat history
@@ -435,6 +441,56 @@ Output parsers convert raw LLM text responses into structured, usable Python obj
 
 ---
 
+### 7. Chains
+
+**Status:** ✅ Completed
+
+Chains are sequences of operations that combine multiple LangChain components (prompts, models, parsers) into reusable workflows. They enable complex, multi-step AI applications with clean, functional-style code.
+
+#### Implementations:
+
+1. **Simple Chain** (`5.Chains/simple_chain.py`)
+   - Basic chain using pipe operator (`|`) syntax
+   - Pattern: `prompt | model | parser`
+   - Use case: Single-step operations with prompt, model, and output parsing
+   - Features: Visual graph representation with `get_graph().print_ascii()`
+   - Status: ✅ Working
+
+2. **Sequential Chain** (`5.Chains/sequential_chain.py`)
+   - Multi-step chain where output of one step feeds into the next
+   - Pattern: `prompt1 | model | parser | prompt2 | model | parser`
+   - Use case: Multi-stage processing (e.g., generate report → summarize report)
+   - Features: Automatic data flow between chain steps
+   - Status: ✅ Working
+
+3. **Parallel Chain** (`5.Chains/parallel_chain.py`)
+   - Executes multiple chains simultaneously using `RunnableParallel`
+   - Pattern: Multiple chains run in parallel, results combined
+   - Use case: Generate notes and quiz questions simultaneously from same text
+   - Features: Uses different models (OpenAI + Gemini) for parallel execution
+   - Status: ✅ Working
+
+4. **Conditional Chain** (`5.Chains/conditional_chain.py`)
+   - Routes execution based on conditions using `RunnableBranch`
+   - Pattern: Classify input → branch based on classification → execute appropriate chain
+   - Use case: Sentiment analysis with different responses for positive/negative feedback
+   - Features: Combines PydanticOutputParser with conditional routing
+   - Status: ✅ Working
+
+**Key Learnings:**
+
+- **Pipe Operator (`|`)**: Clean, functional-style syntax for chaining components
+- **Simple Chains**: Basic pattern `prompt | model | parser` for single-step operations
+- **Sequential Chains**: Output of one step automatically becomes input to next step
+- **Parallel Chains**: Use `RunnableParallel` to run multiple chains simultaneously, improving performance
+- **Conditional Chains**: Use `RunnableBranch` with lambda functions to route based on conditions
+- **Chain Visualization**: `chain.get_graph().print_ascii()` shows the chain structure visually
+- **Pydantic in Chains**: When using PydanticOutputParser, access attributes with dot notation (`x.sentiment`) not dictionary access (`x["sentiment"]`)
+- **Model Flexibility**: Can use different models in different parts of the chain (e.g., OpenAI for one step, Gemini for another)
+- **Chain Composition**: Chains can be composed and reused, making code modular and maintainable
+
+---
+
 ## 📦 Requirements
 
 See `requirements.md` for the complete list of dependencies.
@@ -556,6 +612,12 @@ python .\4.Output Parsers\str_output_parser.py
 python .\4.Output Parsers\pydantic_output_parser.py
 python .\4.Output Parsers\structured_output_parser.py
 
+# Chains
+python .\5.Chains\simple_chain.py
+python .\5.Chains\sequential_chain.py
+python .\5.Chains\parallel_chain.py
+python .\5.Chains\conditional_chain.py
+
 # Projects
 python .\Projects\1.Chatbot\chatbot.py
 ```
@@ -619,6 +681,15 @@ python .\Projects\1.Chatbot\chatbot.py
    - **`with_structured_output()`**: Use when your model supports native structured output (OpenAI, Anthropic). More efficient than parsers.
    - **Why use structured output parsers?**: They ensure consistent, parseable output from LLMs. Without them, you'd need manual parsing and error handling.
    - **ResponseSchema vs Pydantic**: `ResponseSchema` was a simpler API but is deprecated. Modern approach uses Pydantic models with `Field(description=...)` for better type safety and validation.
+
+9. **Chains - Building Complex Workflows**
+   - **Pipe Operator (`|`)**: Use for clean, functional-style chaining: `prompt | model | parser`
+   - **Sequential Chains**: Output of one step automatically flows to the next step
+   - **Parallel Chains**: Use `RunnableParallel` to run multiple operations simultaneously for better performance
+   - **Conditional Chains**: Use `RunnableBranch` with lambda functions to route execution based on conditions
+   - **Pydantic in Chains**: When working with Pydantic objects in chains, use dot notation (`x.attribute`) not dictionary access (`x["attribute"]`)
+   - **Chain Visualization**: Use `get_graph().print_ascii()` to visualize chain structure for debugging
+   - **Model Flexibility**: Different steps in a chain can use different models (OpenAI, Gemini, etc.)
 
 ---
 
@@ -849,6 +920,109 @@ parser = PydanticOutputParser(pydantic_object=Facts)
 
 ---
 
+### Issue 8: Gemini Model Name Error
+
+**Problem:**
+
+```python
+NotFound: 404 models/gemini-1.5-pro-latest is not found for API version v1beta, 
+or is not supported for generateContent.
+```
+
+**Root Cause:**
+
+- Model name `gemini-1.5-pro-latest` doesn't exist in Google Gemini API
+- The `-latest` suffix is not a valid model identifier
+- Different Gemini model versions have different availability based on API version and region
+
+**Solution:**
+
+Changed the model name from `gemini-1.5-pro-latest` to `gemini-2.5-flash`:
+
+**Before (Error):**
+```python
+model2 = ChatGoogleGenerativeAI(model="gemini-1.5-pro-latest")
+```
+
+**After (Fixed):**
+```python
+model2 = ChatGoogleGenerativeAI(model="gemini-2.5-flash")
+```
+
+**Alternative Valid Model Names:**
+- `gemini-2.5-flash` ✅ (Works - confirmed)
+- `gemini-1.5-pro` ✅ (May work depending on API version)
+- `gemini-1.5-flash` ✅ (Alternative option)
+
+**Lesson Learned:**
+
+- Always check Google AI Studio or API documentation for valid model names
+- Model names are case-sensitive and must match exactly
+- The `-latest` suffix is not a valid model identifier
+- Different API versions may support different models
+- When encountering 404 errors with model names, try alternative model names from the official documentation
+
+---
+
+### Issue 9: Pydantic Object Access Error in Conditional Chains
+
+**Problem:**
+
+```python
+TypeError: 'Feedback' object is not subscriptable
+```
+
+**Error Location:**
+```python
+conditional_branch_chain = RunnableBranch(
+    (lambda x: x["sentiment"] == "positive", prompt2 | model | parser),
+    #                    ^^^^^^^^^^^^^^^^
+    #                    Trying to access Pydantic object like a dictionary
+)
+```
+
+**Root Cause:**
+
+- `PydanticOutputParser` returns a Pydantic model object (not a dictionary)
+- The lambda function tried to access it using dictionary syntax `x["sentiment"]`
+- Pydantic objects use attribute access with dot notation, not dictionary-style access
+
+**Solution:**
+
+Changed from dictionary access to attribute access:
+
+**Before (Error):**
+```python
+conditional_branch_chain = RunnableBranch(
+    (lambda x: x["sentiment"] == "positive", prompt2 | model | parser),
+    (lambda x: x["sentiment"] == "negative", prompt3 | model | parser),
+    RunnableLambda(lambda x: "Thank you for your feedback!")
+)
+```
+
+**After (Fixed):**
+```python
+conditional_branch_chain = RunnableBranch(
+    (lambda x: x.sentiment == "positive", prompt2 | model | parser),
+    (lambda x: x.sentiment == "negative", prompt3 | model | parser),
+    RunnableLambda(lambda x: "Thank you for your feedback!")
+)
+```
+
+**Key Difference:**
+- ❌ `x["sentiment"]` - Dictionary access (doesn't work on Pydantic objects)
+- ✅ `x.sentiment` - Attribute access (correct for Pydantic objects)
+
+**Lesson Learned:**
+
+- **Pydantic objects use dot notation**: When `PydanticOutputParser` returns a Pydantic model, access attributes with `x.attribute`, not `x["attribute"]`
+- **Know your data types**: Understand whether you're working with dictionaries or Pydantic objects
+- **Type awareness**: Pydantic models provide type safety and validation, but require correct access patterns
+- **Chain composition**: When chaining `PydanticOutputParser` with `RunnableBranch`, the branch receives the Pydantic object directly
+- **Debugging tip**: Check the type of object returned by each chain step to understand how to access its properties
+
+---
+
 ### Common Issues & Solutions
 
 | Issue                                                | Solution                                              |
@@ -861,6 +1035,8 @@ parser = PydanticOutputParser(pydantic_object=Facts)
 | `StopIteration` with Hugging Face models             | Use chat-completion compatible models                 |
 | Environment variable not loading                     | Check variable name spelling and `.env` file location |
 | `ImportError: langchain.output_parsers` not found    | Use `PydanticOutputParser` from `langchain_core.output_parsers` instead |
+| `NotFound: 404 models/gemini-1.5-pro-latest`          | Use `gemini-2.5-flash` or `gemini-1.5-pro` instead |
+| `TypeError: 'Feedback' object is not subscriptable`  | Use dot notation (`x.sentiment`) instead of dict access (`x["sentiment"]`) for Pydantic objects |
 
 ---
 
@@ -912,9 +1088,15 @@ parser = PydanticOutputParser(pydantic_object=Facts)
 ## 📅 Last Updated
 
 **Date:** January 2025  
-**Current Focus:** Prompts Component & Projects  
+**Current Focus:** Chains & Complex Workflows  
 **Recent Additions:**
 
+- ✅ Complete Chains section:
+  - Simple chains with pipe operator syntax
+  - Sequential multi-step chains
+  - Parallel chains with RunnableParallel (using multiple models)
+  - Conditional chains with RunnableBranch and PydanticOutputParser
+  - Chain visualization with get_graph()
 - ✅ Complete Output Parsers section:
   - String, JSON, and Pydantic output parsers
   - Migrated deprecated StructuredOutputParser to PydanticOutputParser
@@ -939,7 +1121,8 @@ parser = PydanticOutputParser(pydantic_object=Facts)
 
 - Vector databases integration
 - RAG (Retrieval Augmented Generation) implementation
-- Chains and Agents
+- Agents and Tools
+- More complex chain compositions
 - More complete project implementations
 
 ---
